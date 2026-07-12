@@ -33,26 +33,14 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser to view the site.
 
-## 🖼️ Screenshots Gallery
 
-### Homepage Preview
-
-![Homepage preview](https://via.placeholder.com/1200x600?text=Bella+House+Homepage)
-
-### Product / Shop View
-
-![Product preview](https://via.placeholder.com/1200x600?text=Product+Preview)
-
-### Checkout / Account Pages
-
-![Checkout preview](https://via.placeholder.com/1200x600?text=Checkout+Preview)
 
 ## 📬 License / Contact
 
 For questions or collaboration inquiries, please contact:
 
-- Email: `yourname@example.com`
+- Email: `arjunkotwal153@gmail.com`
 - GitHub: [arjunkotwal153](https://github.com/arjunkotwal153)
 
-> License: Add your preferred license and contact details here.
+
 
