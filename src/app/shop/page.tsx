@@ -7,7 +7,7 @@ import { useCart } from "../../context/CartContext";
 import { supabase } from "../../lib/supabase"; 
 import { useAuth } from "../../context/AuthContext";
 
-const FILTERS = ["All", "Tees", "Outerwear", "Accessories"];
+const FILTERS = ["All"];
 const TEXT_STYLE = "font-display text-[15vw] font-black leading-[0.85] tracking-wide uppercase flex flex-col items-center text-center";
 
 export default function Shop() {
