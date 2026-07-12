@@ -1,12 +1,11 @@
-import type { Config } from "tailwindcss";
+// Remove the "import type { Config } from 'tailwindcss'" line entirely
 
-const config: Config = {
+const config = {
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
-  // ADD THIS ENTIRE SAFELIST BLOCK:
   safelist: [
     'col-span-12',
     'md:col-span-2',
@@ -29,9 +28,9 @@ const config: Config = {
         background: "var(--background)",
         foreground: "var(--foreground)",
       },
-      // (Keep your existing font configurations here if you have them)
     },
   },
   plugins: [],
 };
+
 export default config;

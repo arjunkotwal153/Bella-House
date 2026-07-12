@@ -14,7 +14,7 @@ if (typeof window !== "undefined") {
 // ==========================================
 // SCROLL SEQUENCE CONFIGURATION
 // ==========================================
-const TOTAL_FRAMES = 200; // Keep this as your actual frame count!
+const TOTAL_FRAMES = 200; 
 
 const currentFrame = (index: number) => 
   `/sequence/ezgif-frame-${(index + 1).toString().padStart(3, '0')}.jpg`;
@@ -28,9 +28,7 @@ export default function Home() {
   const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0); 
   
   // Refs
-  const loaderRef = useRef<HTMLDivElement>(null);
-  const counterContainerRef = useRef<HTMLDivElement>(null);
-  const counterRef = useRef<HTMLSpanElement>(null);
+  const introRef = useRef<HTMLDivElement>(null);
   const transitionBgRef = useRef<HTMLDivElement>(null);
   const marqueeRef = useRef<HTMLDivElement>(null);
   
@@ -40,16 +38,15 @@ export default function Home() {
   const imagesRef = useRef<HTMLImageElement[]>([]);
   
   const [imagesLoaded, setImagesLoaded] = useState(false);
-  const [isFirstVisit, setIsFirstVisit] = useState<boolean | null>(null);
-  const [loadProgress, setLoadProgress] = useState(0);
+  const [hasEntered, setHasEntered] = useState<boolean | null>(null);
 
+  // Check if they already clicked "Enter" during this visit
   useEffect(() => {
-    const visited = sessionStorage.getItem("bella_visited");
-    if (visited) {
-      setIsFirstVisit(false);
+    const entered = sessionStorage.getItem("bella_entered");
+    if (entered) {
+      setHasEntered(true);
     } else {
-      sessionStorage.setItem("bella_visited", "true");
-      setIsFirstVisit(true);
+      setHasEntered(false);
     }
   }, []);
 
@@ -57,8 +54,7 @@ export default function Home() {
   // FIXED SEAMLESS MARQUEE
   // ==========================================
   useEffect(() => {
-    // FIX: Wait until the component has fully rendered before starting the animation!
-    if (isFirstVisit === null || !marqueeRef.current) return;
+    if (hasEntered === null || hasEntered === false || !marqueeRef.current) return;
     
     const ctx = gsap.context(() => {
       gsap.to(".marquee-content", { 
@@ -69,10 +65,10 @@ export default function Home() {
       });
     }, marqueeRef);
     return () => ctx.revert();
-  }, [isFirstVisit]); // Added isFirstVisit here so it runs after the blank screen
+  }, [hasEntered]);
 
   // ==========================================
-  // SEQUENCE IMAGE PRELOADER
+  // SEQUENCE IMAGE PRELOADER (SILENT BACKGROUND)
   // ==========================================
   useEffect(() => {
     let loadedCount = 0;
@@ -83,16 +79,7 @@ export default function Home() {
       img.src = currentFrame(i);
       img.onload = () => {
         loadedCount++;
-        const progress = Math.floor((loadedCount / TOTAL_FRAMES) * 100);
-        setLoadProgress(progress);
-        
-        if (counterRef.current) {
-          counterRef.current.innerText = progress.toString().padStart(3, '0');
-        }
-
-        if (loadedCount === TOTAL_FRAMES) {
-          setImagesLoaded(true);
-        }
+        if (loadedCount === TOTAL_FRAMES) setImagesLoaded(true);
       };
       img.onerror = () => {
         loadedCount++;
@@ -134,15 +121,11 @@ export default function Home() {
 
     const handleResize = () => {
       const dpr = window.devicePixelRatio || 1;
-      
       canvas.width = window.innerWidth * dpr;
       canvas.height = window.innerHeight * dpr;
-      
       canvas.style.width = `${window.innerWidth}px`;
       canvas.style.height = `${window.innerHeight}px`;
-      
       context.scale(dpr, dpr);
-      
       renderFrame(frame.current);
     };
 
@@ -151,21 +134,11 @@ export default function Home() {
 
     const ctx = gsap.context(() => {
       
-      if (isFirstVisit) {
-        gsap.to(".wave-svg", { x: -40, repeat: -1, duration: 0.7, ease: "none" });
-        
-        const tl = gsap.timeline();
-        tl.to(counterContainerRef.current, { opacity: 0, duration: 0.2, delay: 0.5 })
-          .to(loaderRef.current, { 
-            yPercent: -100, 
-            duration: 1.2, 
-            ease: "power4.inOut", 
-            onComplete: () => gsap.set(loaderRef.current, { display: "none" }) 
-          })
-          .fromTo(".hero-text-line", { y: "110%" }, { y: "0%", duration: 1.2, stagger: 0.15, ease: "power4.out" }, "-=0.5");
-      } else {
-        gsap.set(loaderRef.current, { display: "none" });
+      // If coming straight to the page (already entered), ensure hero text is visible
+      if (hasEntered === true) {
         gsap.set(".hero-text-line", { y: "0%" });
+      } else {
+        gsap.set(".hero-text-line", { y: "110%" });
       }
 
       gsap.to(frame, {
@@ -188,7 +161,26 @@ export default function Home() {
       window.removeEventListener("resize", handleResize);
       ctx.revert();
     };
-  }, [imagesLoaded, isFirstVisit]);
+  }, [imagesLoaded, hasEntered]);
+
+  // ==========================================
+  // ENTER BUTTON ANIMATION (SLIDES VIDEO UP)
+  // ==========================================
+  const handleEnter = () => {
+    if (!imagesLoaded) return; // Prevent enter if canvas frames aren't ready
+    
+    sessionStorage.setItem("bella_entered", "true");
+    
+    gsap.to(introRef.current, {
+      yPercent: -100,
+      duration: 1.2,
+      ease: "power4.inOut",
+      onComplete: () => setHasEntered(true)
+    });
+
+    // Animate Hero Text In
+    gsap.to(".hero-text-line", { y: "0%", duration: 1.2, stagger: 0.15, ease: "power4.out", delay: 0.3 });
+  };
 
   const handleNavigate = (e: React.MouseEvent, path: string) => {
     e.preventDefault(); 
@@ -200,7 +192,8 @@ export default function Home() {
     .set(".transition-text-line", { y: "110%", delay: 1 });
   };
 
-  if (isFirstVisit === null) return <div className="min-h-screen bg-[#F2EFE9]" />;
+  // Prevent UI flashing before checking session storage
+  if (hasEntered === null) return <div className="min-h-screen bg-[#F2EFE9]" />;
 
   return (
     <main className="relative bg-[#F2EFE9] text-[#E02915] overflow-hidden selection:bg-[#E02915] selection:text-[#F2EFE9]">
@@ -213,18 +206,40 @@ export default function Home() {
         </h1>
       </div>
 
-      {/* Preloader */}
-      <div ref={loaderRef} className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-black text-white ${isFirstVisit === false ? 'hidden' : ''}`}>
-        <h1 className={`relative z-10 mix-blend-difference text-white opacity-20 ${TEXT_STYLE}`}>
-          <span>LOADING</span><span>ASSETS</span>
-        </h1>
-        <div ref={counterContainerRef} className="absolute bottom-8 right-8 z-20 flex items-center gap-4">
-          <div className="relative w-10 h-10 rounded-full bg-white/10 flex items-center justify-start overflow-hidden">
-            <svg className="absolute wave-svg left-0" width="160" height="40" viewBox="0 0 160 40" fill="none"><path d="M0,20 Q10,10 20,20 T40,20 T60,20 T80,20 T100,20 T120,20 T140,20 T160,20" stroke="white" strokeWidth="2.5" strokeLinecap="round" /></svg>
+      {/* ========================================= */}
+      {/* VIDEO INTRO GATE (REPLACES LOADING PAGE)  */}
+      {/* ========================================= */}
+      {!hasEntered && (
+        <div ref={introRef} className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black">
+  
+         {/* Background Video */}
+          <video 
+            src="https://zyhljvwkaukzukhhnhzf.supabase.co/storage/v1/object/public/assets/intro.mp4" 
+            autoPlay 
+            loop 
+            muted  
+            playsInline 
+            className="absolute inset-0 w-full h-full object-cover opacity-60"
+          />
+          
+          {/* Content Overlay */}
+          <div className="relative z-10 flex flex-col items-center justify-center h-full w-full mt-12">
+            <h1 className={`${TEXT_STYLE} text-white mb-12`}>
+              <span>BELLA</span>
+              <span>HOUSE</span>
+            </h1>
+            
+            <button 
+              onClick={handleEnter}
+              disabled={!imagesLoaded} // Disabled until the 200 images finish loading quietly
+              className={`px-12 py-5 border text-white font-body text-sm font-bold uppercase tracking-[0.3em] transition-all duration-500 backdrop-blur-sm 
+                ${imagesLoaded ? 'border-white/50 hover:bg-white hover:text-black cursor-pointer' : 'border-white/10 opacity-50 cursor-not-allowed'}`}
+            >
+              {imagesLoaded ? "Enter Here" : "Loading..."}
+            </button>
           </div>
-          <span ref={counterRef} className="text-5xl font-body tracking-tight text-white font-medium">000</span>
         </div>
-      </div>
+      )}
 
       {/* ORIGINAL HERO SECTION */}
       <section className="relative h-screen flex flex-col items-center justify-center w-full">
@@ -265,7 +280,9 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CANVAS SCROLL SEQUENCE SECTION */}
+      {/* ========================================= */}
+      {/* RESTORED CANVAS SCROLL SEQUENCE SECTION     */}
+      {/* ========================================= */}
       <section ref={sequenceContainerRef} className="relative h-screen w-full bg-[#111111]">
         <canvas ref={canvasRef} className="absolute inset-0 w-full h-full object-cover z-0" />
       </section>
@@ -301,7 +318,7 @@ export default function Home() {
           </div>
           <div className="flex flex-col gap-3 opacity-80">
              <span className="font-bold text-sm uppercase tracking-widest mb-2 text-[#F2EFE9] opacity-100">Socials</span>
-            <a href="https://www.instagram.com/priyanka_90208235?igsh=YXZlZzdhZnJicXdo" className="hover:opacity-100 transition-opacity">Instagram</a>
+            <a href="https://www.instagram.com/priyanka_90208235?igsh=YXZlZzdhZnJicXdo" target="_blank" rel="noopener noreferrer" className="hover:opacity-100 transition-opacity">Instagram</a>
           </div>
           <div className="flex flex-col items-start lg:items-end gap-3 opacity-80">
             <span className="font-bold text-sm uppercase tracking-widest mb-2 text-[#F2EFE9] opacity-100">Company</span>
