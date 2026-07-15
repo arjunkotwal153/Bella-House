@@ -162,12 +162,13 @@ export default function ProductDetail() {
 
               {/* WhatsApp Helper */}
               <a 
-                href="https://wa.me/919056550173?text=Hi%20Bella%20House,%20I%20need%20help%20with%20my%20measurements!" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="border-b border-[#E02915] hover:opacity-70 transition-opacity"
-                >
-                WHATSAPP US: 9056550173
+  href="https://wa.me/919056550173?text=Hi%20Bella%20House,%20I%20need%20help%20with%20my%20measurements!" 
+  target="_blank" 
+  rel="noopener noreferrer"
+  className="border-b border-[#E02915] hover:opacity-70 transition-opacity"
+>
+                <span>Unsure how to measure?</span>
+                <span className="font-bold border-b border-[#E02915]">WhatsApp us: 9056550173</span>
               </a>
             </div>
 
