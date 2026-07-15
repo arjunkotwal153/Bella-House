@@ -27,7 +27,7 @@ export default function Checkout() {
     const numericPrice = parseFloat(item.price.replace('₹', ''));
     return total + (numericPrice * item.quantity);
   }, 0);
-  const shipping = subtotal > 0 ? 150 : 0;
+  const shipping = subtotal > 0 ? 0 : 0;
   const total = subtotal + shipping;
 
   const formRef = useRef<HTMLFormElement>(null);
