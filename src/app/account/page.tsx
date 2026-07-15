@@ -21,9 +21,11 @@ export default function AccountPage() {
     const fetchOrders = async () => {
       // Thanks to RLS, this will automatically ONLY fetch this user's orders!
       const { data, error } = await supabase
-        .from('orders')
-        .select('*')
-        .order('created_at', { ascending: false });
+  .from('orders')
+  .select('*')
+  .eq('user_id', user.id)
+  .eq('status', 'paid') // <-- ADD THIS EXACT LINE
+  .order('created_at', { ascending: false });
 
       if (data) setOrders(data);
       if (error) console.error("Error fetching orders:", error);
@@ -115,7 +117,7 @@ export default function AccountPage() {
                       </div>
                       <div className="flex flex-col gap-1">
                         <span className="opacity-60 font-bold">Total</span>
-                        <span>${order.total.toFixed(2)}</span>
+                        <span>₹{order.total.toFixed(2)}</span>
                       </div>
                       <div className="flex flex-col gap-1">
                         <span className="opacity-60 font-bold">Status</span>

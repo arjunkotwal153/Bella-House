@@ -7,6 +7,17 @@ import { useCart } from "../../context/CartContext";
 import { useAuth } from "../../context/AuthContext"; 
 import { supabase } from "../../lib/supabase"; 
 
+// 1. RAZORPAY SCRIPT LOADER
+const loadRazorpayScript = () => {
+  return new Promise((resolve) => {
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
+
 export default function Checkout() {
   const router = useRouter();
   const { cartItems, clearCart } = useCart(); 
@@ -16,7 +27,7 @@ export default function Checkout() {
     const numericPrice = parseFloat(item.price.replace('₹', ''));
     return total + (numericPrice * item.quantity);
   }, 0);
-  const shipping = subtotal > 0 ? 150.00 : 0;
+  const shipping = subtotal > 0 ? 0 : 0;
   const total = subtotal + shipping;
 
   const formRef = useRef<HTMLFormElement>(null);
@@ -24,10 +35,10 @@ export default function Checkout() {
   const successOverlayRef = useRef<HTMLDivElement>(null);
   
   const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'upi' | 'cod'>('upi');
   
   // FORM STATE
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState(''); // NEW: Phone state added
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [address, setAddress] = useState('');
@@ -72,12 +83,9 @@ export default function Checkout() {
   }
 
   // =========================================
-  // REAL DATABASE INSERTION
+  // SUPABASE DATABASE INSERTION HELPER
   // =========================================
-  const handlePlaceOrder = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsProcessing(true);
-
+  const saveOrderToDatabase = async () => {
     try {
       const { data, error } = await supabase
         .from('orders')
@@ -89,25 +97,101 @@ export default function Checkout() {
             shipping_address: address,
             shipping_city: city,
             shipping_postal_code: postalCode,
-            payment_method: paymentMethod,
+            payment_method: 'razorpay',
             subtotal: subtotal,
             shipping_fee: shipping,
             total: total,
-            status: paymentMethod === 'upi' ? 'pending_verification' : 'processing',
+            status: 'paid',
             items: cartItems 
           }
         ]);
-
+      
       if (error) throw error;
-
+        // ---> NEW: Trigger the confirmation email <---
+        await fetch('/api/send-confirmation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            email: email, 
+            firstName: firstName,
+            total: total,
+          }),
+        });
       clearCart();
+      setIsProcessing(false);
 
+      // Trigger Success Animation
       gsap.to(successOverlayRef.current, { clipPath: "inset(0% 0% 0% 0%)", duration: 1, ease: "power4.inOut", pointerEvents: "all" });
       gsap.fromTo(".success-text", { y: 50, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, stagger: 0.1, ease: "power3.out", delay: 0.5 });
       
     } catch (error) {
       console.error("Error saving order:", error);
-      alert("There was an issue processing your order. Please try again.");
+      alert("There was an issue saving your order. Please contact support.");
+      setIsProcessing(false);
+    }
+  };
+
+  // =========================================
+  // MAIN CHECKOUT HANDLER
+  // =========================================
+  const handlePlaceOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsProcessing(true);
+
+    // Trigger RAZORPAY Flow Immediately
+    const isLoaded = await loadRazorpayScript();
+    if (!isLoaded) {
+      alert("Secure Payment Gateway failed to load. Please check your internet connection.");
+      setIsProcessing(false);
+      return;
+    }
+
+    try {
+      // 1. Tell your backend to create a Razorpay order
+      const response = await fetch("/api/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: total }), 
+      });
+
+      const order = await response.json();
+      if (!order.id) throw new Error("Server failed to create order.");
+
+      // 2. Configure Razorpay Popup
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID, 
+        amount: order.amount,
+        currency: order.currency,
+        name: "Bella House",
+        description: "Apparel Purchase",
+        order_id: order.id,
+        handler: async function (response: any) {
+          // PAYMENT SUCCESS! Now save it to Supabase
+          await saveOrderToDatabase();
+        },
+        // NEW: Dynamic prefill block using the phone state
+        prefill: {
+          name: `${firstName} ${lastName}`,
+          email: email,
+          contact: phone, // Passes the customer's phone number securely
+        },
+        theme: {
+          color: "#E02915",
+        },
+        modal: {
+          ondismiss: function () {
+            // If user closes the window without paying
+            setIsProcessing(false);
+          }
+        }
+      };
+
+      const paymentObject = new (window as any).Razorpay(options);
+      paymentObject.open();
+
+    } catch (error) {
+      console.error("Razorpay Error:", error);
+      alert("Something went wrong initiating the payment.");
       setIsProcessing(false);
     }
   };
@@ -119,7 +203,7 @@ export default function Checkout() {
       <div ref={successOverlayRef} style={{ clipPath: "inset(0% 0% 100% 0%)" }} className="fixed inset-0 z-[99999] bg-[#E02915] text-[#F2EFE9] flex flex-col items-center justify-center p-6">
         <div className="max-w-2xl text-center flex flex-col items-center">
           <h1 className="success-text font-display text-6xl md:text-8xl font-black uppercase tracking-tighter mb-6 leading-none">Order<br/>Confirmed</h1>
-          <p className="success-text font-body text-lg md:text-xl opacity-90 mb-12 max-w-md">Your order has been placed. Tracking details will be sent to {email}.</p>
+          <p className="success-text font-body text-lg md:text-xl opacity-90 mb-12 max-w-md">Your order has been placed securely. Tracking details will be sent to {email}.</p>
           
           <div className="success-text w-full p-8 border-2 border-[#F2EFE9] flex flex-col items-center gap-2 transition-all duration-500">
              <h2 className="font-display text-3xl md:text-4xl uppercase tracking-tighter mb-2">Thank you, {user.user_metadata?.full_name || firstName.toUpperCase()}</h2>
@@ -157,6 +241,15 @@ export default function Checkout() {
                   disabled
                   className="w-full bg-transparent border-b-2 border-[#E02915]/30 p-4 font-body outline-none opacity-60 cursor-not-allowed" 
                 />
+                {/* NEW: Phone number input field */}
+                <input 
+                  required 
+                  type="tel" 
+                  value={phone} 
+                  onChange={(e) => setPhone(e.target.value)} 
+                  placeholder="PHONE NUMBER (FOR DELIVERY UPDATES)" 
+                  className="w-full bg-transparent border-b-2 border-[#E02915]/30 focus:border-[#E02915] p-4 font-body outline-none placeholder:text-[#E02915]/50 transition-colors" 
+                />
               </div>
 
               {/* Shipping Info */}
@@ -173,37 +266,27 @@ export default function Checkout() {
                 </div>
               </div>
 
-              {/* PAYMENT SYSTEM */}
-              <div className="flex flex-col gap-6">
-                <h2 className="font-body font-bold uppercase tracking-widest text-sm">3. Payment Method</h2>
-                <div className="flex gap-4 mb-2">
-                  <button type="button" onClick={() => setPaymentMethod('upi')} className={`flex-1 py-3 font-body font-bold uppercase tracking-widest text-xs border-2 transition-colors ${paymentMethod === 'upi' ? 'bg-[#E02915] text-[#F2EFE9] border-[#E02915]' : 'border-[#E02915]/30 hover:border-[#E02915]'}`}>Pay via UPI</button>
-                  <button type="button" onClick={() => setPaymentMethod('cod')} className={`flex-1 py-3 font-body font-bold uppercase tracking-widest text-xs border-2 transition-colors ${paymentMethod === 'cod' ? 'bg-[#E02915] text-[#F2EFE9] border-[#E02915]' : 'border-[#E02915]/30 hover:border-[#E02915]'}`}>Cash on Delivery</button>
-                </div>
-                <div className="border-2 border-[#E02915] p-6 flex flex-col gap-6 bg-[#E5E1D8]">
-                  {paymentMethod === 'upi' ? (
-                    <div className="flex flex-col md:flex-row gap-8 items-center">
-                      <div className="w-40 h-40 bg-white p-2 border-2 border-[#E02915] flex-shrink-0">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=yourname@bank&pn=BellaHouse" alt="UPI QR Code" className="w-full h-full object-contain" />
-                      </div>
-                      <div className="flex flex-col flex-1 w-full gap-4">
-                        <p className="font-body text-sm font-bold uppercase tracking-widest opacity-80">Scan QR to pay <span className="text-[#E02915]">₹{total.toFixed(2)}</span></p>
-                        <p className="font-body text-xs opacity-60 normal-case">After successful payment, please enter the 12-digit Transaction/UTR number below to verify your order.</p>
-                        <input required type="text" placeholder="ENTER 12-DIGIT UTR NUMBER" className="w-full bg-transparent border-b-2 border-[#E02915] p-3 font-body outline-none placeholder:text-[#E02915]/50 uppercase" />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="py-8 text-center">
-                      <p className="font-body text-sm font-bold uppercase tracking-widest opacity-80 mb-2">Pay at your doorstep</p>
-                      <p className="font-body text-xs opacity-60 max-w-md mx-auto normal-case">You will pay the courier when your package arrives. Please ensure you have the exact amount ready to avoid exact-change issues.</p>
-                    </div>
-                  )}
-                </div>
+              {/* ANIMATED PAYMENT BUTTON */}
+              <button 
+                type="submit" 
+                disabled={isProcessing} 
+                className="group relative w-full bg-[#E02915] text-[#F2EFE9] py-8 font-display text-4xl md:text-5xl uppercase tracking-tighter overflow-hidden disabled:opacity-50 cursor-pointer transition-all active:scale-[0.98]"
+              >
+                {/* Background slide-up effect */}
+                <div className="absolute inset-0 bg-black translate-y-[100%] group-hover:translate-y-[0%] transition-transform duration-500 ease-in-out"></div>
+                
+                {/* Button Text with sliding arrow */}
+                <span className="relative z-10 flex items-center justify-center gap-4">
+                  {isProcessing ? "Connecting..." : "Proceed to Payment"}
+                  {!isProcessing && <span className="group-hover:translate-x-4 transition-transform duration-500">→</span>}
+                </span>
+              </button>
+              
+              <div className="text-center -mt-8 flex flex-col items-center gap-2 opacity-60">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                <p className="font-body text-[10px] uppercase tracking-widest font-bold">100% Secure Checkout powered by Razorpay</p>
               </div>
 
-              <button type="submit" disabled={isProcessing} className="w-full bg-[#E02915] text-[#F2EFE9] py-6 font-display text-4xl uppercase tracking-tighter hover:bg-black transition-colors disabled:opacity-50 cursor-pointer">
-                {isProcessing ? "Processing..." : "Confirm Order"}
-              </button>
             </form>
           </div>
 
