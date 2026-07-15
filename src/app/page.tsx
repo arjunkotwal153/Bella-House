@@ -274,9 +274,10 @@ export default function Home() {
               <div className="flex gap-8 md:gap-16 pr-8 md:pr-16">
                 <span>STYLE IS A WAY TO SAY WHO YOU ARE WITHOUT HAVING TO SPEAK ++</span>
                 <span>MADE TO BE WORN. OR JUDGED. OR BOTH. ++</span>
-              </div>
+              </div>  
             </div>
           </div>
+        
         </div>
       </section>
 

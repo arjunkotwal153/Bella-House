@@ -20,7 +20,7 @@ export default function Shop() {
   const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
   const [activeFilter, setActiveFilter] = useState("All");
   
-  const gridRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null); 
   const transitionBgRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

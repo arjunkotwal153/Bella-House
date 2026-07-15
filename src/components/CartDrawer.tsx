@@ -94,7 +94,7 @@ export default function CartDrawer() {
         <div className="p-6 border-t-2 border-[#E02915] bg-[#F2EFE9]">
           <div className="flex justify-between font-body text-lg font-bold uppercase tracking-widest mb-6">
             <span>Subtotal</span>
-            <span>${subtotal.toFixed(2)}</span>
+            <span>₹{subtotal.toFixed(2)}</span>
           </div>
           
           {/* UPDATED: Uses the gatekeeper function instead of direct Link */}
