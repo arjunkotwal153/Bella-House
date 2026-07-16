@@ -122,14 +122,18 @@ export default function Home() {
 
     const frame = { current: 0 };
     let lastWidth = window.innerWidth;
+    let isInitialLoad = true; // FIX: We need to know if this is the first render
 
     const handleResize = () => {
       const currentWidth = window.innerWidth;
       
       // CRITICAL MOBILE FIX: Ignore resize events on mobile if only the height changed (URL bar hiding)
-      if (currentWidth === lastWidth && currentWidth < 768) {
+      // BUT never ignore the very first load!
+      if (!isInitialLoad && currentWidth === lastWidth && currentWidth < 768) {
         return; 
       }
+      
+      isInitialLoad = false;
       lastWidth = currentWidth;
 
       const dpr = window.devicePixelRatio || 1;
@@ -160,9 +164,9 @@ export default function Home() {
           trigger: sequenceContainerRef.current,
           start: "top top",
           end: "+=600%", 
-          scrub: 1.5, // CRITICAL MOBILE FIX: Increased from 0.5 to 1.5 for buttery momentum smoothing
+          scrub: 1.5, // Buttery momentum smoothing
           pin: true, 
-          anticipatePin: 1, // Smooths the entry into the pinned section
+          anticipatePin: 1, 
         },
         onUpdate: () => renderFrame(frame.current)
       });
