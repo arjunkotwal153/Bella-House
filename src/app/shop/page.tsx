@@ -163,6 +163,19 @@ export default function Shop() {
           </div>
         </div>
       </footer>
+      {/* ========================================= */}
+      {/* FLOATING CUSTOM & SUPPORT BUTTON          */}
+      {/* ========================================= */}
+      <Link 
+        href="/contact" 
+        className="fixed bottom-6 right-6 md:bottom-10 md:right-10 z-[9000] bg-[#E02915] text-[#F2EFE9] px-6 py-4 rounded-full font-body text-xs md:text-sm font-bold uppercase tracking-widest shadow-xl hover:scale-105 hover:bg-black transition-all duration-300 flex items-center gap-3 border border-[#E02915]"
+      >
+        <span className="relative flex h-3 w-3">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+        </span>
+        Custom & Support
+      </Link>
     </main>
   );
 }

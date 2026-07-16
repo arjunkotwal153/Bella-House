@@ -110,9 +110,6 @@ export default function Home() {
       const hRatio = logicalWidth / img.width;
       const vRatio = logicalHeight / img.height;
       
-      // CRITICAL FIX FOR MOBILE: 
-      // Use Math.min on screens smaller than 768px to contain the whole image without cropping.
-      // Keep Math.max on desktop to cover the whole screen.
       const isMobile = logicalWidth < 768;
       const ratio = isMobile ? Math.min(hRatio, vRatio) : Math.max(hRatio, vRatio);
       
@@ -124,8 +121,17 @@ export default function Home() {
     };
 
     const frame = { current: 0 };
+    let lastWidth = window.innerWidth;
 
     const handleResize = () => {
+      const currentWidth = window.innerWidth;
+      
+      // CRITICAL MOBILE FIX: Ignore resize events on mobile if only the height changed (URL bar hiding)
+      if (currentWidth === lastWidth && currentWidth < 768) {
+        return; 
+      }
+      lastWidth = currentWidth;
+
       const dpr = window.devicePixelRatio || 1;
       canvas.width = window.innerWidth * dpr;
       canvas.height = window.innerHeight * dpr;
@@ -140,7 +146,6 @@ export default function Home() {
 
     const ctx = gsap.context(() => {
       
-      // If coming straight to the page (already entered), ensure hero text is visible
       if (hasEntered === true) {
         gsap.set(".hero-text-line", { y: "0%" });
       } else {
@@ -155,8 +160,9 @@ export default function Home() {
           trigger: sequenceContainerRef.current,
           start: "top top",
           end: "+=600%", 
-          scrub: 0.5,     
-          pin: true,      
+          scrub: 1.5, // CRITICAL MOBILE FIX: Increased from 0.5 to 1.5 for buttery momentum smoothing
+          pin: true, 
+          anticipatePin: 1, // Smooths the entry into the pinned section
         },
         onUpdate: () => renderFrame(frame.current)
       });
@@ -173,7 +179,7 @@ export default function Home() {
   // ENTER BUTTON ANIMATION (SLIDES VIDEO UP)
   // ==========================================
   const handleEnter = () => {
-    if (!imagesLoaded) return; // Prevent enter if canvas frames aren't ready
+    if (!imagesLoaded) return; 
     
     sessionStorage.setItem("bella_entered", "true");
     
@@ -184,7 +190,6 @@ export default function Home() {
       onComplete: () => setHasEntered(true)
     });
 
-    // Animate Hero Text In
     gsap.to(".hero-text-line", { y: "0%", duration: 1.2, stagger: 0.15, ease: "power4.out", delay: 0.3 });
   };
 
@@ -198,13 +203,11 @@ export default function Home() {
     .set(".transition-text-line", { y: "110%", delay: 1 });
   };
 
-  // Prevent UI flashing before checking session storage
   if (hasEntered === null) return <div className="min-h-screen bg-[#F2EFE9]" />;
 
   return (
     <main className="relative bg-[#F2EFE9] text-[#E02915] overflow-hidden selection:bg-[#E02915] selection:text-[#F2EFE9]">
       
-      {/* Page Transition Block */}
       <div ref={transitionBgRef} style={{ clipPath: "inset(100% 0% 0% 0%)" }} className="fixed inset-0 z-[99999] bg-[#E02915] flex flex-col items-center justify-center pointer-events-none">
         <h1 className={`${TEXT_STYLE} text-[#F2EFE9] w-full`}>
           <span className="overflow-hidden w-full flex justify-center pb-2"><span className="transition-text-line block translate-y-[110%]">BELLA</span></span>
@@ -212,14 +215,9 @@ export default function Home() {
         </h1>
       </div>
 
-      {/* ========================================= */}
-      {/* VIDEO INTRO GATE (REPLACES LOADING PAGE)  */}
-      {/* ========================================= */}
       {!hasEntered && (
         <div ref={introRef} className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black">
-  
-         {/* Background Video */}
-          <video 
+         <video 
             src="https://zyhljvwkaukzukhhnhzf.supabase.co/storage/v1/object/public/assets/intro.mp4" 
             autoPlay 
             loop 
@@ -227,17 +225,14 @@ export default function Home() {
             playsInline 
             className="absolute inset-0 w-full h-full object-cover opacity-60"
           />
-          
-          {/* Content Overlay */}
           <div className="relative z-10 flex flex-col items-center justify-center h-full w-full mt-12">
             <h1 className={`${TEXT_STYLE} text-white mb-12`}>
               <span>BELLA</span>
               <span>HOUSE</span>
             </h1>
-            
             <button 
               onClick={handleEnter}
-              disabled={!imagesLoaded} // Disabled until the 200 images finish loading quietly
+              disabled={!imagesLoaded}
               className={`px-12 py-5 border text-white font-body text-sm font-bold uppercase tracking-[0.3em] transition-all duration-500 backdrop-blur-sm 
                 ${imagesLoaded ? 'border-white/50 hover:bg-white hover:text-black cursor-pointer' : 'border-white/10 opacity-50 cursor-not-allowed'}`}
             >
@@ -247,7 +242,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* ORIGINAL HERO SECTION */}
       <section className="relative h-screen flex flex-col items-center justify-center w-full">
         <header className="absolute top-6 left-6 right-6 md:top-8 md:left-8 md:right-8 flex justify-between items-center text-[#E02915] font-body text-sm md:text-base font-semibold uppercase tracking-wide z-10">
           <div className="flex items-center">
@@ -283,26 +277,19 @@ export default function Home() {
               </div>  
             </div>
           </div>
-        
         </div>
       </section>
 
-      {/* ========================================= */}
-      {/* RESTORED CANVAS SCROLL SEQUENCE SECTION     */}
-      {/* ========================================= */}
-      {/* FIX: Changed background from black to #F2EFE9 to blend seamlessly with the letterboxing on mobile */}
       <section ref={sequenceContainerRef} className="relative h-screen w-full bg-[#F2EFE9]">
         <canvas ref={canvasRef} className="absolute inset-0 w-full h-full z-0" />
       </section>
 
-      {/* Explore All Button Section */}
       <section className="w-full flex justify-center py-24 md:py-32 bg-[#F2EFE9]">
         <a href="/shop" onClick={(e) => handleNavigate(e, '/shop')} className="font-display text-5xl md:text-7xl uppercase tracking-tighter text-[#E02915] hover:opacity-70 transition-opacity border-b-4 border-[#E02915] pb-2 leading-none cursor-pointer">
           Explore Catalog
         </a>
       </section>
 
-      {/* Footer */}
       <footer className="w-full bg-[#E02915] text-[#F2EFE9] flex flex-col pt-16 pb-12 px-4 md:px-8 border-t-4 border-[#E02915]">
         <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-10 md:gap-6 pt-12 mt-4 font-body text-xs md:text-sm tracking-wide">
           <div className="flex flex-col gap-2">
@@ -338,9 +325,6 @@ export default function Home() {
         </div>
       </footer>
 
-      {/* ========================================= */}
-      {/* FLOATING CUSTOM & SUPPORT BUTTON          */}
-      {/* ========================================= */}
       <Link 
         href="/contact" 
         className="fixed bottom-6 right-6 md:bottom-10 md:right-10 z-[9000] bg-[#E02915] text-[#F2EFE9] px-6 py-4 rounded-full font-body text-xs md:text-sm font-bold uppercase tracking-widest shadow-xl hover:scale-105 hover:bg-black transition-all duration-300 flex items-center gap-3 border border-[#E02915]"

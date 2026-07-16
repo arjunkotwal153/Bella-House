@@ -121,12 +121,39 @@ export default function ProductDetail() {
 
       <section ref={contentRef} className="pt-32 px-6 md:px-8 pb-32 max-w-[1800px] mx-auto min-h-screen flex flex-col lg:flex-row gap-16 lg:gap-24 opacity-0">
         
-        {/* Left: Product Images */}
-        <div className="w-full lg:w-1/2 flex flex-col gap-6">
-          <div className="w-full aspect-[3/4] bg-[#E5E1D8] relative overflow-hidden group">
-             <img src={product.image} alt={product.name} className="absolute inset-0 w-full h-full object-cover" />
-             <img src={product.hover_image} alt={`${product.name} alternate view`} className="absolute inset-0 w-full h-full object-cover z-10 transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] opacity-0 group-hover:opacity-100" />
+        {/* ========================================= */}
+        {/* LEFT: PRODUCT IMAGES                      */}
+        {/* ========================================= */}
+        <div className="w-full lg:w-1/2 flex flex-col gap-6 relative">
+          
+          {/* MOBILE VIEW: Horizontal Swipeable Gallery (Scroll Snapping) */}
+          <div className="flex lg:hidden w-full overflow-x-auto snap-x snap-mandatory scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <div className="w-full flex-none snap-center relative aspect-[3/4]">
+              <img src={product.image} alt={product.name} className="absolute inset-0 w-full h-full object-cover bg-[#E5E1D8]" />
+            </div>
+            {product.hover_image && (
+              <div className="w-full flex-none snap-center relative aspect-[3/4]">
+                <img src={product.hover_image} alt={`${product.name} alternate view`} className="absolute inset-0 w-full h-full object-cover bg-[#E5E1D8]" />
+              </div>
+            )}
           </div>
+          
+          {/* Mobile Swipe Indicator (Optional visual cue) */}
+          {product.hover_image && (
+            <div className="flex lg:hidden justify-center items-center gap-2 mt-2 w-full">
+              <span className="w-2 h-2 rounded-full bg-[#E02915]"></span>
+              <span className="w-2 h-2 rounded-full bg-[#E02915]/30"></span>
+            </div>
+          )}
+
+          {/* DESKTOP VIEW: Single box with hover transition */}
+          <div className="hidden lg:block w-full aspect-[3/4] bg-[#E5E1D8] relative overflow-hidden group">
+             <img src={product.image} alt={product.name} className="absolute inset-0 w-full h-full object-cover" />
+             {product.hover_image && (
+               <img src={product.hover_image} alt={`${product.name} alternate view`} className="absolute inset-0 w-full h-full object-cover z-10 transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] opacity-0 group-hover:opacity-100" />
+             )}
+          </div>
+
         </div>
 
         {/* Right: Product Details & Measurement Form */}
@@ -162,13 +189,13 @@ export default function ProductDetail() {
 
               {/* WhatsApp Helper */}
               <a 
-  href="https://wa.me/919056550173?text=Hi%20Bella%20House,%20I%20need%20help%20with%20my%20measurements!" 
-  target="_blank" 
-  rel="noopener noreferrer"
-  className="border-b border-[#E02915] hover:opacity-70 transition-opacity"
->
+                href="https://wa.me/919056550173?text=Hi%20Bella%20House,%20I%20need%20help%20with%20my%20measurements!" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="border-b border-[#E02915] hover:opacity-70 transition-opacity"
+              >
                 <span>Unsure how to measure?</span>
-                <span className="font-bold border-b border-[#E02915]">WhatsApp us: 9056550173</span>
+                <span className="font-bold border-b border-[#E02915] ml-1">WhatsApp us: 9056550173</span>
               </a>
             </div>
 
@@ -215,12 +242,12 @@ export default function ProductDetail() {
           <div className="flex flex-col gap-3 opacity-80">
              <span className="font-bold text-sm uppercase tracking-widest mb-2 text-[#F2EFE9] opacity-100">Socials</span>
             <a href="https://www.instagram.com/priyanka_90208235?igsh=YXZlZzdhZnJicXdo" className="hover:opacity-100 transition-opacity">Instagram</a>
-            
           </div>
           <div className="flex flex-col items-start lg:items-end gap-3 opacity-80">
-            
             <Link href="/about" className="hover:opacity-100 transition-opacity">About Us</Link>
-            <Link href="/contact" className="hover:opacity-100 font-bold mt-2 md:mt-4 border-b-2 border-[#F2EFE9] pb-1">Let's talk</Link>
+            <Link href="/contact" className="mt-2 md:mt-4 bg-[#F2EFE9] text-[#E02915] px-4 py-2 font-display text-lg uppercase tracking-widest hover:bg-black hover:text-[#F2EFE9] transition-colors inline-block text-center border border-[#F2EFE9]">
+              Custom & Support →
+            </Link>
           </div>
         </div>
       </footer>
