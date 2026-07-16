@@ -109,7 +109,13 @@ export default function Home() {
 
       const hRatio = logicalWidth / img.width;
       const vRatio = logicalHeight / img.height;
-      const ratio = Math.max(hRatio, vRatio);
+      
+      // CRITICAL FIX FOR MOBILE: 
+      // Use Math.min on screens smaller than 768px to contain the whole image without cropping.
+      // Keep Math.max on desktop to cover the whole screen.
+      const isMobile = logicalWidth < 768;
+      const ratio = isMobile ? Math.min(hRatio, vRatio) : Math.max(hRatio, vRatio);
+      
       const centerShift_x = (logicalWidth - img.width * ratio) / 2;
       const centerShift_y = (logicalHeight - img.height * ratio) / 2;
 
@@ -284,8 +290,9 @@ export default function Home() {
       {/* ========================================= */}
       {/* RESTORED CANVAS SCROLL SEQUENCE SECTION     */}
       {/* ========================================= */}
-      <section ref={sequenceContainerRef} className="relative h-screen w-full bg-[#111111]">
-        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full object-cover z-0" />
+      {/* FIX: Changed background from black to #F2EFE9 to blend seamlessly with the letterboxing on mobile */}
+      <section ref={sequenceContainerRef} className="relative h-screen w-full bg-[#F2EFE9]">
+        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full z-0" />
       </section>
 
       {/* Explore All Button Section */}
@@ -324,10 +331,27 @@ export default function Home() {
           <div className="flex flex-col items-start lg:items-end gap-3 opacity-80">
             <span className="font-bold text-sm uppercase tracking-widest mb-2 text-[#F2EFE9] opacity-100">Company</span>
             <Link href="/about" className="hover:opacity-100 transition-opacity">About Us</Link>
-            <Link href="/contact" className="hover:opacity-100 font-bold mt-2 md:mt-4 border-b-2 border-[#F2EFE9] pb-1">Let's talk</Link>
+            <Link href="/contact" className="mt-2 md:mt-4 bg-[#F2EFE9] text-[#E02915] px-4 py-2 font-display text-lg uppercase tracking-widest hover:bg-black hover:text-[#F2EFE9] transition-colors inline-block text-center border border-[#F2EFE9]">
+              Custom & Support →
+            </Link>
           </div>
         </div>
       </footer>
+
+      {/* ========================================= */}
+      {/* FLOATING CUSTOM & SUPPORT BUTTON          */}
+      {/* ========================================= */}
+      <Link 
+        href="/contact" 
+        className="fixed bottom-6 right-6 md:bottom-10 md:right-10 z-[9000] bg-[#E02915] text-[#F2EFE9] px-6 py-4 rounded-full font-body text-xs md:text-sm font-bold uppercase tracking-widest shadow-xl hover:scale-105 hover:bg-black transition-all duration-300 flex items-center gap-3 border border-[#E02915]"
+      >
+        <span className="relative flex h-3 w-3">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+        </span>
+        Custom & Support
+      </Link>
+
     </main>
   );
 }
