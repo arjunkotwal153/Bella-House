@@ -4,13 +4,13 @@ import gsap from 'gsap';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import { useCart } from "../../../context/CartContext";
-import { supabase } from "../../../lib/supabase"; 
+import { supabase } from "../../../lib/supabase";
 import { useAuth } from "../../../context/AuthContext";
 
 const TEXT_STYLE = "font-display text-[15vw] font-black leading-[0.85] tracking-wide uppercase flex flex-col items-center text-center";
 
 export default function ProductDetail() {
-  const router = useRouter(); 
+  const router = useRouter();
   const params = useParams(); // Safely gets the ID from the URL
   const { cartItems, addToCart, setIsCartOpen } = useCart();
   const { setIsAuthOpen, user } = useAuth();
@@ -18,7 +18,7 @@ export default function ProductDetail() {
 
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  
+
   // Custom Measurement State
   const [measurements, setMeasurements] = useState({
     chest: '',
@@ -27,10 +27,10 @@ export default function ProductDetail() {
     shoulder: '',
     length: ''
   });
-  
+
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
-  
+
   const transitionBgRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -54,13 +54,13 @@ export default function ProductDetail() {
   }, [loading, product]);
 
   const handleNavigate = (e: React.MouseEvent, path: string) => {
-    e.preventDefault(); 
+    e.preventDefault();
     const tl = gsap.timeline();
     tl.to(transitionBgRef.current, { clipPath: "inset(0% 0% 0% 0%)", duration: 0.4, ease: "power4.inOut", pointerEvents: "all" })
-    .to(".transition-text-line", { y: "0%", duration: 0.3, stagger: 0.05, ease: "power3.out" }, "-=0.2")
-    .call(() => router.push(path))
-    .set(transitionBgRef.current, { clipPath: "inset(100% 0% 0% 0%)", pointerEvents: "none", delay: 1 })
-    .set(".transition-text-line", { y: "110%", delay: 1 });
+      .to(".transition-text-line", { y: "0%", duration: 0.3, stagger: 0.05, ease: "power3.out" }, "-=0.2")
+      .call(() => router.push(path))
+      .set(transitionBgRef.current, { clipPath: "inset(100% 0% 0% 0%)", pointerEvents: "none", delay: 1 })
+      .set(".transition-text-line", { y: "110%", delay: 1 });
   };
 
   const handleAddToCart = () => {
@@ -71,7 +71,7 @@ export default function ProductDetail() {
     }
 
     setIsAdding(true);
-    
+
     // Bundle measurements into a readable string for the cart
     const customSizeString = `C:${measurements.chest}" W:${measurements.waist}" H:${measurements.hips}" S:${measurements.shoulder}" L:${measurements.length}"`;
 
@@ -95,7 +95,7 @@ export default function ProductDetail() {
 
   return (
     <main className="relative min-h-screen bg-[#F2EFE9] text-[#E02915] selection:bg-[#E02915] selection:text-[#F2EFE9]">
-      
+
       <div ref={transitionBgRef} style={{ clipPath: "inset(100% 0% 0% 0%)" }} className="fixed inset-0 z-[99999] bg-[#E02915] flex flex-col items-center justify-center pointer-events-none">
         <h1 className={`${TEXT_STYLE} text-[#F2EFE9] w-full`}>
           <span className="overflow-hidden w-full flex justify-center pb-2"><span className="transition-text-line block translate-y-[110%]">BELLA</span></span>
@@ -120,24 +120,24 @@ export default function ProductDetail() {
       </header>
 
       <section ref={contentRef} className="pt-32 px-6 md:px-8 pb-32 max-w-[1800px] mx-auto min-h-screen flex flex-col lg:flex-row gap-16 lg:gap-24 opacity-0">
-        
+
         {/* ========================================= */}
         {/* LEFT: PRODUCT IMAGES                      */}
         {/* ========================================= */}
         <div className="w-full lg:w-1/2 flex flex-col gap-6 relative">
-          
+
           {/* MOBILE VIEW: Horizontal Swipeable Gallery (Scroll Snapping) */}
           <div className="flex lg:hidden w-full overflow-x-auto snap-x snap-mandatory scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <div className="w-full flex-none snap-center relative aspect-[3/4]">
-              <img src={product.image} alt={product.name} className="absolute inset-0 w-full h-full object-cover bg-[#E5E1D8]" />
+              <img src={product.image} alt={product.name} className={`absolute inset-0 w-full h-full object-cover bg-[#E5E1D8] ${product.is_sold ? 'grayscale opacity-80' : ''}`} />
             </div>
             {product.hover_image && (
               <div className="w-full flex-none snap-center relative aspect-[3/4]">
-                <img src={product.hover_image} alt={`${product.name} alternate view`} className="absolute inset-0 w-full h-full object-cover bg-[#E5E1D8]" />
+                <img src={product.hover_image} alt={`${product.name} alternate view`} className={`absolute inset-0 w-full h-full object-cover bg-[#E5E1D8] ${product.is_sold ? 'grayscale opacity-80' : ''}`} />
               </div>
             )}
           </div>
-          
+
           {/* Mobile Swipe Indicator (Optional visual cue) */}
           {product.hover_image && (
             <div className="flex lg:hidden justify-center items-center gap-2 mt-2 w-full">
@@ -147,11 +147,11 @@ export default function ProductDetail() {
           )}
 
           {/* DESKTOP VIEW: Single box with hover transition */}
-          <div className="hidden lg:block w-full aspect-[3/4] bg-[#E5E1D8] relative overflow-hidden group">
-             <img src={product.image} alt={product.name} className="absolute inset-0 w-full h-full object-cover" />
-             {product.hover_image && (
-               <img src={product.hover_image} alt={`${product.name} alternate view`} className="absolute inset-0 w-full h-full object-cover z-10 transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] opacity-0 group-hover:opacity-100" />
-             )}
+          <div className={`hidden lg:block w-full aspect-[3/4] bg-[#E5E1D8] relative overflow-hidden group ${product.is_sold ? 'grayscale opacity-80' : ''}`}>
+            <img src={product.image} alt={product.name} className="absolute inset-0 w-full h-full object-cover" />
+            {product.hover_image && (
+              <img src={product.hover_image} alt={`${product.name} alternate view`} className="absolute inset-0 w-full h-full object-cover z-10 transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] opacity-0 group-hover:opacity-100" />
+            )}
           </div>
 
         </div>
@@ -161,58 +161,74 @@ export default function ProductDetail() {
           <a href="/shop" onClick={(e) => handleNavigate(e, '/shop')} className="font-body text-xs font-bold uppercase tracking-widest flex items-center gap-2 mb-8 hover:opacity-60 transition-opacity w-fit cursor-pointer">
             <span>←</span> Return to Shop
           </a>
-          
+
           <h1 className="font-display text-5xl md:text-7xl lg:text-[6vw] font-black uppercase tracking-tighter leading-[0.85] mb-6">
             {product.name}
           </h1>
-          <p className="font-body text-3xl md:text-4xl mb-8">₹{product.price}</p>
-          
+
+          {/* SOLD vs PRICE LOGIC */}
+          {product.is_sold ? (
+            <p className="font-display text-3xl md:text-4xl mb-8 uppercase tracking-widest opacity-60">Sold Out</p>
+          ) : (
+            <p className="font-body text-3xl md:text-4xl mb-8">₹{product.price}</p>
+          )}
+
           <p className="font-body text-lg opacity-80 leading-relaxed max-w-md mb-12">
             {product.description}
           </p>
 
           <div className="flex flex-col gap-8 w-full max-w-md">
-            
-            {/* Made to Measure Form */}
-            <div className="flex flex-col gap-4">
-              <div className="flex justify-between items-end mb-2">
-                <span className="font-body text-sm font-bold uppercase tracking-widest">Tailored Measurements (Inches)</span>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4 font-body">
-                <input type="number" placeholder="CHEST" value={measurements.chest} onChange={(e) => setMeasurements({...measurements, chest: e.target.value})} className="border-b-2 border-[#E02915]/30 focus:border-[#E02915] bg-transparent outline-none p-3 placeholder:text-[#E02915]/50 transition-colors" />
-                <input type="number" placeholder="WAIST" value={measurements.waist} onChange={(e) => setMeasurements({...measurements, waist: e.target.value})} className="border-b-2 border-[#E02915]/30 focus:border-[#E02915] bg-transparent outline-none p-3 placeholder:text-[#E02915]/50 transition-colors" />
-                <input type="number" placeholder="HIPS" value={measurements.hips} onChange={(e) => setMeasurements({...measurements, hips: e.target.value})} className="border-b-2 border-[#E02915]/30 focus:border-[#E02915] bg-transparent outline-none p-3 placeholder:text-[#E02915]/50 transition-colors" />
-                <input type="number" placeholder="SHOULDER" value={measurements.shoulder} onChange={(e) => setMeasurements({...measurements, shoulder: e.target.value})} className="border-b-2 border-[#E02915]/30 focus:border-[#E02915] bg-transparent outline-none p-3 placeholder:text-[#E02915]/50 transition-colors" />
-                <input type="number" placeholder="DESIRED LENGTH" value={measurements.length} onChange={(e) => setMeasurements({...measurements, length: e.target.value})} className="col-span-2 border-b-2 border-[#E02915]/30 focus:border-[#E02915] bg-transparent outline-none p-3 placeholder:text-[#E02915]/50 transition-colors" />
-              </div>
 
-              {/* WhatsApp Helper */}
-              <a 
-                href="https://wa.me/919056550173?text=Hi%20Bella%20House,%20I%20need%20help%20with%20my%20measurements!" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="border-b border-[#E02915] hover:opacity-70 transition-opacity"
-              >
-                <span>Unsure how to measure?</span>
-                <span className="font-bold border-b border-[#E02915] ml-1">WhatsApp us: 9056550173</span>
-              </a>
-            </div>
+            {/* ONLY SHOW FORM IF NOT SOLD */}
+            {!product.is_sold && (
+              <>
+                {/* Made to Measure Form */}
+                <div className="flex flex-col gap-4">
+                  <div className="flex justify-between items-end mb-2">
+                    <span className="font-body text-sm font-bold uppercase tracking-widest">Tailored Measurements (Inches)</span>
+                  </div>
 
-            <div className="flex flex-col gap-2">
-               <span className="font-body text-sm font-bold uppercase tracking-widest">Quantity</span>
-               <div className="flex items-center gap-6">
-                 <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="text-2xl hover:opacity-60 transition-opacity pb-1">−</button>
-                 <span className="font-body text-xl w-4 text-center">{quantity}</span>
-                 <button onClick={() => setQuantity(quantity + 1)} className="text-2xl hover:opacity-60 transition-opacity pb-1">+</button>
-               </div>
-            </div>
+                  <div className="grid grid-cols-2 gap-4 font-body">
+                    <input type="number" placeholder="CHEST" value={measurements.chest} onChange={(e) => setMeasurements({ ...measurements, chest: e.target.value })} className="border-b-2 border-[#E02915]/30 focus:border-[#E02915] bg-transparent outline-none p-3 placeholder:text-[#E02915]/50 transition-colors" />
+                    <input type="number" placeholder="WAIST" value={measurements.waist} onChange={(e) => setMeasurements({ ...measurements, waist: e.target.value })} className="border-b-2 border-[#E02915]/30 focus:border-[#E02915] bg-transparent outline-none p-3 placeholder:text-[#E02915]/50 transition-colors" />
+                    <input type="number" placeholder="HIPS" value={measurements.hips} onChange={(e) => setMeasurements({ ...measurements, hips: e.target.value })} className="border-b-2 border-[#E02915]/30 focus:border-[#E02915] bg-transparent outline-none p-3 placeholder:text-[#E02915]/50 transition-colors" />
+                    <input type="number" placeholder="SHOULDER" value={measurements.shoulder} onChange={(e) => setMeasurements({ ...measurements, shoulder: e.target.value })} className="border-b-2 border-[#E02915]/30 focus:border-[#E02915] bg-transparent outline-none p-3 placeholder:text-[#E02915]/50 transition-colors" />
+                    <input type="number" placeholder="DESIRED LENGTH" value={measurements.length} onChange={(e) => setMeasurements({ ...measurements, length: e.target.value })} className="col-span-2 border-b-2 border-[#E02915]/30 focus:border-[#E02915] bg-transparent outline-none p-3 placeholder:text-[#E02915]/50 transition-colors" />
+                  </div>
 
-            <button onClick={handleAddToCart} disabled={isAdding} className="w-full sm:w-fit mt-8 font-display text-5xl md:text-6xl uppercase tracking-tighter text-[#E02915] hover:opacity-70 transition-opacity border-b-4 border-[#E02915] pb-2 leading-none flex items-center gap-4 group disabled:opacity-50">
-              {isAdding ? "Adding..." : "Add to Bag"}
-              <span className="group-hover:translate-x-2 transition-transform block mt-1">↗</span>
+                  {/* WhatsApp Helper */}
+                  <a
+                    href="https://wa.me/919056550173?text=Hi%20Bella%20House,%20I%20need%20help%20with%20my%20measurements!"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="border-b border-[#E02915] hover:opacity-70 transition-opacity w-fit"
+                  >
+                    <span>Unsure how to measure?</span>
+                    <span className="font-bold border-b border-[#E02915] ml-1">WhatsApp us: 9056550173</span>
+                  </a>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <span className="font-body text-sm font-bold uppercase tracking-widest">Quantity</span>
+                  <div className="flex items-center gap-6">
+                    <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="text-2xl hover:opacity-60 transition-opacity pb-1">−</button>
+                    <span className="font-body text-xl w-4 text-center">{quantity}</span>
+                    <button onClick={() => setQuantity(quantity + 1)} className="text-2xl hover:opacity-60 transition-opacity pb-1">+</button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* BUTTON LOGIC CHANGES IF SOLD */}
+            <button
+              onClick={handleAddToCart}
+              disabled={isAdding || product.is_sold}
+              className="w-full sm:w-fit mt-8 font-display text-5xl md:text-6xl uppercase tracking-tighter text-[#E02915] hover:opacity-70 transition-opacity border-b-4 border-[#E02915] pb-2 leading-none flex items-center gap-4 group disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {product.is_sold ? "Sold" : isAdding ? "Adding..." : "Add to Bag"}
+              {!product.is_sold && <span className="group-hover:translate-x-2 transition-transform block mt-1">↗</span>}
             </button>
-            
+
           </div>
         </div>
       </section>
@@ -240,7 +256,7 @@ export default function ProductDetail() {
             <Link href="/policies/shipping" className="hover:opacity-100 transition-opacity">Shipping & Delivery</Link>
           </div>
           <div className="flex flex-col gap-3 opacity-80">
-             <span className="font-bold text-sm uppercase tracking-widest mb-2 text-[#F2EFE9] opacity-100">Socials</span>
+            <span className="font-bold text-sm uppercase tracking-widest mb-2 text-[#F2EFE9] opacity-100">Socials</span>
             <a href="https://www.instagram.com/priyanka_90208235?igsh=YXZlZzdhZnJicXdo" className="hover:opacity-100 transition-opacity">Instagram</a>
           </div>
           <div className="flex flex-col items-start lg:items-end gap-3 opacity-80">
